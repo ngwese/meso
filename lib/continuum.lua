@@ -123,8 +123,85 @@ end
 -- configuration controller assignments (section 15)
 --
 
+--
+-- 15.1 load, store, and list presets
+--
 
-  
+function Continuum:transmit_config()
+  self.device:cc(109, 0, cfg_ch) -- FIXME: verify
+end
+
+--
+-- 15.2 midi device compatibility
+--
+
+--
+-- 15.3 x, y, z coding
+--
+
+--
+-- 15.4 rounding and pitch tables
+--
+
+--
+-- 15.5 polyphony, routing, and split
+--
+
+--
+-- 15.6 pedal jack configuration
+--
+
+function Continuum:jack_cc(which, cc_num)
+  if which == 1 then
+    self.device:cc(52, clamp(cc_num), cfg_ch)
+  elseif which == 2 then
+    self.device:cc(53, clamp(cc_num), cfg_ch)
+  end
+end 
+
+function Continuum:jack_range(which, min, max)
+  if which == 1 then
+    self.device:cc(76, clamp(min), cfg_ch)
+    self.device:cc(77, clamp(max), cfg_ch)
+  elseif which == 2 then
+    self.device:cc(78, clamp(min), cfg_ch)
+    self.device:cc(79, clamp(max), cfg_ch)
+  end
+end 
+
+--
+-- 15.7 mono function
+--
+
+Continuum.MF_PORTAMENTO = 0
+Continuum.MF_LEGATO_Z = 1
+Continuum.MF_RETRIGGER_Z = 2
+Continuum.MF_LEGATO_T = 3
+Continuum.MF_RETRIGGER_NEW = 4
+Continuum.MF_RETRIGGER_ALL = 5
+
+function Continuum:mono_function(mode)
+  self.device:cc(46, util.clamp(mode, 0, 5), cfg_ch)
+end
+
+function Continuum:mono_interval(interval)
+  self.device:cc(48, util.clamp(interval, 0, 96), cfg_ch)
+end
+
+--
+-- 15.8 firmware version and cvc serial number
+--
+
+function Continuum:_get_firmware_version()
+  -- ??? not sure how to interpret the instructions, does the device send midi back in response?
+  self.device:cc(102, 0, cfg_ch)
+  self.device:cc(103, 0, cfg_ch)
+end
+
+
+--
+-- 15.9 other configuration controller assignments
+--
 
 
 return Continuum
