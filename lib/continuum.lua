@@ -100,8 +100,8 @@ end
 
 -- constants for use with `equal` method
 Continuum.ROUND_IGNORE = 0
-Continuum.ROUND_PRESET = 0
-Continuum.ROUND_EQUAL = 0
+Continuum.ROUND_PRESET = 64
+Continuum.ROUND_EQUAL = 127
 
 function Continuum:equal(mode)
   self.device:cc(65, mode, abs_ch)
