@@ -1,5 +1,5 @@
 --
--- continuum finger board helpers
+-- continuum fingerboard helpers
 --
 
 local util = require "util"
@@ -127,6 +127,16 @@ end
 -- 15.1 load, store, and list presets
 --
 
+function Continuum:load_preset(num)
+  if num > 0 and num <= 512 then
+    lsb = 0x7f & num
+    msb = 0x7f & (num >> 7)
+    print("lsb", lsb, "msb", msb)
+    self.device:cc(80, lsb, cfg_ch)
+    self.device:cc(81, msb, cfg_ch)
+  end
+end
+
 function Continuum:transmit_config()
   self.device:cc(109, 0, cfg_ch) -- FIXME: verify
 end
@@ -203,5 +213,26 @@ end
 -- 15.9 other configuration controller assignments
 --
 
+--
+-- custom stuff reverse engineered from the editor
+--
+
+function Continuum:query_parameter(num)
+  -- the 'Continuum Request Profile.mid' file appears to ping each
+  -- of the controls the editor is interested in by sending a cc 110 <param_cc_num> on ch 16
+  -- followed by cc 115 1 on ch 16
+  -- self.device:cc(110, num, cfg_ch)
+  -- self.device:cc(115, 1, cfg_ch)
+
+  -- start query?
+  self.device:cc(110, 127, 16)
+
+  self.device:cc(115, 1, 16)
+  self.device:cc(110, num, 16)
+  self.device:cc(8, 64, 8)
+
+  -- stop query?
+  self.device:cc(110, 0, 16)
+end
 
 return Continuum

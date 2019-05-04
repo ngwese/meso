@@ -1,7 +1,8 @@
 -- continuum test
 
 local tu = require "tabutil"
-local continuum = include("ngwese/lib/continuum")
+local powermate = include("meso/lib/powermate")
+local continuum = include("meso/lib/continuum")
 
 local event_count = 0
 
@@ -19,14 +20,30 @@ c.event = report
 -- handlers
 --
 
-local midi_handler = function(data)
+cm = continuum.connect(1)
+cm.device.event = function(data)
   local e = midi.to_msg(data)
-  tu.print(e)
+  if e.ch == 16 then
+    tu.print(e)
+  end
   event_count = event_count + 1
 end
 
-cm = continuum.connect(1)
-cm.device.event = midi_handler
+pm = powermate.connect(1)
+pm.key = function(num, value)
+  print("key: ", num, value)
+end
+pm.enc = function(num, delta)
+  print("enc: ", num, delta)
+end
+
+-- function enc(num, delta)
+--   print("[enc]: ", num, delta)
+-- end
+
+-- function key(num, z)
+--   print("[key]: ", num, z)
+-- end
 
 --
 -- lifecycle
