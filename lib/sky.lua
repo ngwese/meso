@@ -173,15 +173,13 @@ function Clock.new(o)
   o.ch = o.ch or 0
   
   if o.metro == nil then
-    -- TODO: allocate metro and assign callback?
-    print("WARNING: re-using metro[1]")
-    local metro = require "metro"
-    o.metro = metro[1]
+    o.metro = metro.init()
   end
 
   -- setup metro timing and callback
+  o.stage = o.stage or 1
   o.interval = o.interval or 1
-  o.metro.callback = function(stage)
+  o.metro.event = function(stage)
     o.stage = stage
     o:fire(stage)
   end
@@ -199,7 +197,7 @@ end
 
 function Clock:start()
   -- FIXME: why is the first stage always 1 if the init_stage value is 0?
-  self.metro:start(self.interval, -1, self.stage or 0)
+  self.metro:start(self.interval, -1, self.stage)
   self.chain:process(mk_start(self.ch))
 end
 
@@ -218,6 +216,11 @@ function Clock:fire(stage)
   if self.enabled then
     self.chain:process(mk_clock(stage, self.ch))
   end
+end
+
+function Clock:cleanup()
+  -- ?? metros do need deallocation?
+  self:stop()
 end
 
 

@@ -8,11 +8,18 @@ chain = sky.Chain{
 
 source = sky.Input{
   device = midi.connect(1),
-  chain = chain
+  chain = chain,
+}
+
+clock = sky.Clock{
+  interval = 1,
+  chain = chain,
 }
 
 function init()
   source:enable()
+  clock:enable()
+  clock:start()
 end
 
 function key(n, z)
@@ -27,5 +34,6 @@ function redraw()
 end
 
 function cleanup()
+  clock:cleanup()
   source:cleanup()
 end
