@@ -107,7 +107,7 @@ function Input.new(o)
   -- set defaults
   o.device = o.device or midi.connect(1)
   if type(o.enabled) ~= "boolean" then
-    o.enabled = false
+    o.enabled = true
   end
 
   -- give this a unique id and add it to the set of inputs
@@ -131,7 +131,6 @@ function Input:on_midi_event(data)
   
   local event = midi.to_msg(data)
   if event ~= nil then
-
     self.chain:process(event)
   end
 end
@@ -156,6 +155,37 @@ function Input:cleanup()
   end
 end
 
+--
+-- Output class (event sink)
+--
+local Output = {}
+Output.__index = Output
+
+function Output.new(o)
+  local o = setmetatable(o or {}, Output)
+
+  -- defaults
+  o.device = o.device or midi.connect(2)
+  if type(o.enabled) ~= "boolean" then
+    o.enabled = true
+  end
+
+  return o
+end
+
+function Output:process(event, output)
+  local t = event.type
+  if self.enabled and (t ~= nil) then
+    -- filter out non-midi events
+    if type_names[t] ~= nil then
+      self.device:send(event)
+    end
+  end
+
+  -- pass events on
+  output(event)
+end
+
 
 --
 -- Clock class (event source)
@@ -166,7 +196,7 @@ Clock.__index = Clock
 function Clock.new(o)
   local o = setmetatable(o or {}, Clock)
   if type(o.enabled) ~= "boolean" then
-    o.enabled = false
+    o.enabled = true
   end
 
   o.ch = o.ch or 0
@@ -302,6 +332,32 @@ function Chain:run(events)
     end
   end
   return output:to_array()
+end
+
+
+--
+-- Switcher class
+--
+local Switcher = {}
+Switcher.__index = Switcher
+
+function Switcher.new(o)
+  local o = setmetatable(o or {}, Switcher)
+
+  -- defaults
+  o.which = o.which or 1
+  if type(o.enabled) ~= "boolean" then
+    o.enabled = true
+  end
+
+  return o
+end
+
+function Switcher:process(event, output)
+  local chain = self[self.which]
+  if chain ~= nil then
+    chain:process(event, output)
+  end
 end
 
 
@@ -603,11 +659,9 @@ function Logger:process(event, output)
       local r = nil
       self._props.filter:process(event, function(e) r = e end)
       if r ~= nil then
-        --tu.print(r)
         print(to_string(r))
       end
     else
-      --tu.print(event)
       print(to_string(event))
     end
   end
@@ -759,8 +813,10 @@ end
 return {
   -- objects
   Input = Input.new,
+  Output = Output.new,
   Behavior = Behavior.new,
   Chain = Chain.new,
+  Switcher = Switcher.new,
   Logger = Logger.new,
   Thru = Thru.new,
   Clock = Clock.new,

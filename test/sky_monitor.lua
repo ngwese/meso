@@ -2,12 +2,31 @@ local sky = include('meso/lib/sky')
 
 engine.name = 'SimplePassThru'
 
+-- local output = sky.output{
+--   device = midi.connect(2),
+-- }
+
+-- local sw = sky.Chain{
+--   sky.Switcher{
+--     sky.Output{
+--       device = midi.connect(2),
+--     },
+--     sky.Output{
+--       device = midi.connect(3),
+--     },
+--     sky.Logger{},
+--   },
+-- }
+ 
 local chain = sky.Chain{
   sky.Logger{},
-  sky.Held{
-    -- debug = true,
+  sky.Output{
+    device = midi.connect(2),
   },
-  sky.Pattern{},
+  -- sky.Held{
+  --   debug = true,
+  -- },
+  -- sky.Pattern{},
 }
 
 local source = sky.Input{
@@ -20,11 +39,11 @@ local clk = sky.Clock{
   chain = chain,
 }
 
+
+
+
 function init()
-  source:enable()
-  clk:enable()
   -- clk:start()
-  
 end
 
 function key(n, z)
