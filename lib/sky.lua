@@ -3,7 +3,6 @@
 -- @alias ski
 
 local Deque = include('meso/lib/container/deque')
---local midi = require('midi')
 
 --
 -- module globals
@@ -220,7 +219,7 @@ end
 
 function Clock:cleanup()
   -- ?? metros do need deallocation?
-  self:stop()
+  self.metro.stop()
 end
 
 
@@ -235,10 +234,11 @@ function Chain.new(devices)
   o.bypass = false
   o.devices = devices or {}
 
-  -- rip through devices and if there are functions wrap them in a generic processor object which supports bypass etc.
+  -- rip through devices and if there are functions wrap them in a
+  -- generic processor object which supports bypass etc.
   for i, d in ipairs(o.devices) do
     if type(d) == 'function' then
-       o.devices[i] = Func.new(d)
+      o.devices[i] = Func.new(d)
     end
   end
 
@@ -366,8 +366,8 @@ Held.EVENT = Held
 function Held.new(o)
   local o = setmetatable(o or {}, Held)
   o._tracking = {}
-  o._order = Deque.new()
-  o.debug = false
+  o._ordering = Deque.new()
+  o.debug = o.debug or false
   return o
 end
 
@@ -382,42 +382,52 @@ function Held:process(event, output)
   -- TODO: implement "hold" mode
 
   if t == types.NOTE_ON then
-    -- FIXME: need to copy event in case other devices modify event
     local k = to_id(event.ch, event.note)
-    if self._tracking[k] == nil then
-      self._tracking[k] = event
-      self._order:push_back(k)
+    local e = self._tracking[k]
+    if e == nil then
+      -- new note on
+      self._tracking[k] = {
+	count = 1,
+	event = event,
+      }
+      self._ordering:push_back(k)
       changed = true
+    else
+      -- already tracking, increment count, silent change
+      e.count = e.count + 1
     end
   elseif t == types.NOTE_OFF then
     local k = to_id(event.ch, event.note)
-    if self._tracking[k] ~= nil then
-      self._tracking[k] = nil
-      self._order:remove(k)
-      changed = true
+    local e = self._tracking[k]
+    if e ~= nil then
+      if e.count == 1 then
+	-- last note lifted
+	self._tracking[k] = nil
+	self._ordering:remove(k)
+	changed = true
+      else
+	-- decrement count
+	e.count = e.count - 1
+      end
     end
+  else
+    -- pass unprocessed events
+    output(event)
   end
-
-  -- pass source events
-  output(event)
   
   if changed then
-    -- update state
-    -- FIXME: this could be more efficient...
     local held = {}
-    for i, k in self._order:ipairs() do
-      held[i] = self._tracking[k]
-    end
-
-    for i, k in self._order:ipairs() do
-      print(i, k)
+    for i, k in self._ordering:ipairs() do
+      local e = self._tracking[k]
+      -- print(i, k, e)
+      held[i] = e.event
     end
 
     -- debug
     if self.debug then
       print("HELD >>")
       for i, e in ipairs(held) do
-        print(i, to_string(e))
+	print(i, to_string(e))
       end
       print("<<")
     end
@@ -706,7 +716,13 @@ end
 -- convert midi event object to a readable string
 -- @param event : event object (as created by the mk_* functions)
 function to_string(event)
-  local e = "event " .. type_names[event.type]
+  local tn = type_names[event.type]
+  if tn == nil then
+    -- unknown/custom event type
+    return "custom"
+  end
+
+  local e = "event " .. tn
   for k,v in pairs(event) do
     if k ~= "type" then
       e = e .. ', ' .. k .. ' ' .. v
