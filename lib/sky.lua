@@ -45,48 +45,120 @@ local type_names = invert(types)
 -- event creation (compatible with midi:send(...))
 --
 
-function mk_note_on(note, vel, ch)
+local function mk_note_on(note, vel, ch)
   return { type = types.NOTE_ON, ch = ch or 1, note = note, vel = vel }
 end
 
-function mk_note_off(note, vel, ch)
+local function mk_note_off(note, vel, ch)
   return { type = types.NOTE_OFF, ch = ch or 1, note = note, vel = vel }
 end
 
-function mk_channel_pressure(val, ch)
+local function mk_channel_pressure(val, ch)
   return { type = types.CHANNEL_PRESSURE, ch = ch or 1, val = val }
 end
 
-function mk_key_pressure(val, ch)
+local function mk_key_pressure(val, ch)
   return { type = types.KEY_PRESSURE, ch = ch or 1, val = val }
 end
 
-function mk_pitch_bend(val, ch)
+local function mk_pitch_bend(val, ch)
   return { type = types.PITCH_BEND, ch = ch or 1, val = val }
 end
 
-function mk_program_change(val, ch)
+local function mk_program_change(val, ch)
   return { type = types.PROGRAM_CHANGE, ch = ch or 1, val = val }
 end
 
-function mk_control_change(cc, val, ch)
+local function mk_control_change(cc, val, ch)
   return { type = types.CONTROL_CHANGE, ch = ch or 1, cc = cc, val = val }
 end
 
-function mk_clock(stage, ch)
+local function mk_clock(stage, ch)
   return { type = types.CLOCK, ch = ch or 1, stage = stage }
 end
 
-function mk_start(ch)
+local function mk_start(ch)
   return { type = types.START, ch = ch or 1 }
 end
 
-function mk_stop(ch)
+local function mk_stop(ch)
   return { type = types.STOP, ch = ch or 1 }
 end
 
-function mk_continue(ch)
+local function mk_continue(ch)
   return { type = types.CONTINUE, ch = ch or 1 }
+end
+
+--
+-- helper functions
+--
+
+-- convert midi note number to frequency in hz
+-- @param num : integer midi note number
+local function to_hz(num)
+  local exp = (num - 21) / 12
+  return 27.5 * 2^exp
+end
+
+
+local MIDI_BEND_ZERO = 1 << 13
+-- convert midi pitch bend to [-1, 1] range
+-- @param value : midi pitch bend value (assumed to be 14 bit)
+local function to_bend_range(value)
+  local range = MIDI_BEND_ZERO
+  if value > MIDI_BEND_ZERO then
+    range = range - 1
+  end
+  return (value - MIDI_BEND_ZERO) / range
+end
+
+-- pack midi channel and note values into a numeric value useful as an id or key
+-- @param ch : integer channel number
+-- @param num : integer note number
+local function to_id(ch, num)
+  return ch << 8 | num
+end
+
+-- convert midi event object to a readable string
+-- @param event : event object (as created by the mk_* functions)
+local function to_string(event)
+  local tn = type_names[event.type]
+  if tn == nil then
+    -- unknown/custom event type
+    return "custom"
+  end
+
+  local e = "event " .. tn
+  for k,v in pairs(event) do
+    if k ~= "type" then
+      e = e .. ', ' .. k .. ' ' .. v
+    end
+  end
+  return e
+end
+
+-- convert bpm value to equivalent interval in seconds
+-- @param bpm : beats per minute
+-- @param div : [optional] divisions, 1 = whole note, 4 = quarter note, ...
+local function bpm_to_sec(bpm, div)
+  div = div or 1
+  return 60.0 / bpm / div
+end
+
+local function is_note(event)
+  local t = event.type
+  return (t == types.NOTE_ON) or (t == types.NOTE_OFF)
+end
+
+local function is_clock(event)
+  return event.type == types.CLOCK
+end
+
+local function is_transport(event)
+  local t = event.type
+  return ((t == types.START)
+      or (t == types.STOP)
+      or (t == types.CONTINUE))
 end
 
 
@@ -781,77 +853,8 @@ end
 
 
 --
--- helper functions
+-- module
 --
-
--- convert midi note number to frequency in hz
--- @param num : integer midi note number
-function to_hz(num)
-  local exp = (num - 21) / 12
-  return 27.5 * 2^exp
-end
-
-
-local MIDI_BEND_ZERO = 1 << 13
--- convert midi pitch bend to [-1, 1] range
--- @param value : midi pitch bend value (assumed to be 14 bit)
-function to_bend_range(value)
-  local range = MIDI_BEND_ZERO
-  if value > MIDI_BEND_ZERO then
-    range = range - 1
-  end
-  return (value - MIDI_BEND_ZERO) / range
-end
-
--- pack midi channel and note values into a numeric value useful as an id or key
--- @param ch : integer channel number
--- @param num : integer note number
-function to_id(ch, num)
-  return ch << 8 | num
-end
-
--- convert midi event object to a readable string
--- @param event : event object (as created by the mk_* functions)
-function to_string(event)
-  local tn = type_names[event.type]
-  if tn == nil then
-    -- unknown/custom event type
-    return "custom"
-  end
-
-  local e = "event " .. tn
-  for k,v in pairs(event) do
-    if k ~= "type" then
-      e = e .. ', ' .. k .. ' ' .. v
-    end
-  end
-  return e
-end
-
--- convert bpm value to equivalent interval in seconds
--- @param bpm : beats per minute
--- @param div : [optional] divisions, 1 = whole note, 4 = quarter note, ...
-function bpm_to_sec(bpm, div)
-  div = div or 1
-  return 60.0 / bpm / div
-end
-
-function is_note(event)
-  local t = event.type
-  return (t == types.NOTE_ON) or (t == types.NOTE_OFF)
-end
-
-function is_clock(event)
-  return event.type == types.CLOCK
-end
-
-function is_transport(event)
-  local t = event.type
-  return ((t == types.START)
-      or (t == types.STOP)
-      or (t == types.CONTINUE))
-end
-
 
 return {
   -- objects
