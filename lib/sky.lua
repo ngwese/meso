@@ -5,13 +5,6 @@
 local Deque = include('meso/lib/container/deque')
 
 --
--- module globals
---
-
-local input_count = 0
-local inputs = {}
-
---
 -- module constants
 --
 
@@ -182,11 +175,6 @@ function Input.new(o)
     o.enabled = true
   end
 
-  -- give this a unique id and add it to the set of inputs
-  input_count = input_count + 1
-  o._id = input_count
-  inputs[o._id] = o
-
   -- install device event handler
   o.device.event = function(data)
     o:on_midi_event(data)
@@ -221,7 +209,6 @@ end
 -- perminantly remove this input from receiving further events
 function Input:cleanup()
   self:disable()
-  inputs[self._id] = nil
   if self.device then
     self.device:cleanup()
   end
