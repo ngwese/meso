@@ -1,4 +1,4 @@
-local sky = include('meso/lib/sky')
+local sky = include('meso/lib/sky/process')
 
 engine.name = 'SimplePassThru'
 
