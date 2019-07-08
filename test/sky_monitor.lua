@@ -2,31 +2,16 @@ local sky = include('meso/lib/sky')
 
 engine.name = 'SimplePassThru'
 
--- local output = sky.output{
---   device = midi.connect(2),
--- }
-
--- local sw = sky.Chain{
---   sky.Switcher{
---     sky.Output{
---       device = midi.connect(2),
---     },
---     sky.Output{
---       device = midi.connect(3),
---     },
---     sky.Logger{},
---   },
--- }
- 
 local chain = sky.Chain{
-  sky.Logger{},
-  sky.Output{
-    device = midi.connect(2),
-  },
-  -- sky.Held{
-  --   debug = true,
-  -- },
-  -- sky.Pattern{},
+  -- track currently held notes, emit event when it changes
+  sky.Held{},
+  -- consume held note events, emit event with pattern built from held notes
+  sky.Pattern{ style = 'up' },
+  -- play arpeggio from the pattern, driven by clock events
+  sky.Arp{},
+  -- output events as midi
+  sky.Output{ device = midi.connect(2) },
+  --sky.Logger{},
 }
 
 local source = sky.Input{
@@ -35,21 +20,12 @@ local source = sky.Input{
 }
 
 local clk = sky.Clock{
-  interval = sky.bpm_to_sec(120),
+  interval = sky.bpm_to_sec(120, 4),
   chain = chain,
 }
 
-
-
-
 function init()
-  -- clk:start()
-end
-
-function key(n, z)
-end
-
-function enc(n, d)
+  clk:start()
 end
 
 function redraw()

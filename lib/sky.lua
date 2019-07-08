@@ -499,11 +499,13 @@ end
 local Pattern = {}
 Pattern.__index = Pattern
 Pattern.EVENT = Pattern
+Pattern.builder = {} 
 
-function Pattern.new(props)
-  local o = setmetatable({}, Pattern)
-  o._props = props
-  o.bypass = false
+function Pattern.new(o)
+  local o = setmetatable(o or {}, Pattern)
+  o.style = o.syle or 'up'
+  o.debug = o.debug or false
+
   return o
 end
 
@@ -512,37 +514,58 @@ function Pattern:mk_event(value)
 end
 
 function Pattern:process(event, output, state)
-  output(event)
-  
-  if (not self.bypass) and (event.type == Held.EVENT) then
-    -- calc new pattern and output it
-    print("gen new pattern")
-    output(self:mk_event({ 1, 2, 3}))
+  if event.type == Held.EVENT then
+    local builder = self.builder[self.style]
+    if builder ~= nil then
+      local pattern = builder(event.notes)
+      output(self:mk_event(pattern))
+      if self.debug then
+	print("PAT >>>")
+	for i, e in ipairs(pattern) do
+	  print(i, to_string(e))
+	end
+	print("<<< PAT")
+      end
+    end
+  else
+    output(event)
   end
 end
 
-function Pattern:build_up(notes)
+function Pattern.builder.up(notes)
+  local cmp = function(a, b)
+    return a.note < b.note
+  end
+  -- MAINT: in-place sort so note order is lost
+  table.sort(notes, cmp)
+  return notes
 end
 
-function Pattern:build_down(notes)
+function Pattern.builder.down(notes)
+  local cmp = function(a, b)
+    return a.note > b.note
+  end
+  table.sort(notes, cmp)
+  return notes
 end
 
-function Pattern:build_up_down(notes)
+function Pattern.builder.up_down(notes)
 end
 
-function Pattern:build_up_and_down(notes)
+function Pattern.builder.up_and_down(notes)
 end
 
-function Pattern:build_converge(notes)
+function Pattern.builder.converge(notes)
 end
 
-function Pattern:build_diverge(notes)
+function Pattern.builder.diverge(notes)
 end
 
-function Pattern:build_as_played(notes)
+function Pattern.builder.as_played(notes)
+  return notes
 end
 
-function Pattern:build_random(notes)
+function Pattern.builder.random(notes)
 end
 
 
@@ -552,30 +575,50 @@ end
 local Arp = {}
 Arp.__index = Arp
 
-function Arp.new(props)
-  local o = setmetatable({}, Arp)
-  o._props = props
-  o.bypass = false
-  o.pattern = nil
+function Arp.new(o)
+  local o = setmetatable(o or {}, Arp)
+  o._pattern = nil
+  o._step = 1
+  o._length = 0
+  o._last = nil
   return o
 end
 
-function Arp:process(event, output, state)
-  if self.bypass then
-    output(event)
-    return
-  end
+function Arp:set_pattern(notes)
+  self._pattern = notes
+  self._step = 1
+  self._length = #notes
+end
 
+function Arp:process(event, output, state)
   if event.type == Pattern.EVENT then
     -- capture and queue up new pattern
     print("arp got pattern change")
-    self.pattern = event.value
-    output(event)
+    self:set_pattern(event.value)
     return
   end
   
   if is_clock(event) then
-    -- do arp
+    local last = self._last
+    if last ~= nil then
+      -- kill previous
+      local off = mk_note_off(last.note, last.vel, last.ch)
+      output(off)
+    end
+
+    if self._pattern ~= nil and self._length > 0 then
+      local n = self._step
+      local next = self._pattern[n]
+      -- print("arp", n, to_string(next))
+      output(next)
+      self._last = next
+      n = n + 1
+      if n > self._length then
+	self._step = 1
+      else
+	self._step = n
+      end
+    end
   end
 
   if is_note(event) then
