@@ -1,6 +1,6 @@
 -- powermate test
 
-local powermate = include('ngwese/lib/powermate')
+local powermate = include('meso/lib/powermate')
 
 pm = powermate.connect(1)
 pm.key = function(num, value)
