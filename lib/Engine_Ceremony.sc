@@ -28,7 +28,7 @@ Engine_Ceremony : CroneEngine {
       freqScale = Lag3.kr(freqScale, lag);
       decayScale = Lag3.kr(decayScale, lag);
 
-      mallet = LPF.ar(Trig.ar(t_trig, SampleDur.ir)!2, 10000 * freqScale);
+      mallet = LPF.ar(Trig.ar(t_trig, SampleDur.ir)!2, 10000 * freqScale) / 6.0; // reduce impulse to avoid distortion
       sing = LPF.ar(
         LPF.ar(
           {
