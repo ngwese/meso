@@ -3,6 +3,7 @@
 --
 
 local util = require "util"
+local ControlSpec = require "controlspec"
 
 local abs_ch = 15
 local cfg_ch = 16
@@ -233,6 +234,101 @@ function Continuum:query_parameter(num)
 
   -- stop query?
   self.device:cc(110, 0, 16)
+end
+
+--
+-- parameters
+--
+
+local BARREL_NAMES = {"i", "ii", "iii", "iv"}
+local ID_PREFIX = "continuum_"
+
+local function repeated_number_param(num, id, name, action)
+  return {
+    type = "number",
+    id = id,
+    name = name,
+    min = 0,
+    max = 127,
+    action = function (value)
+      action(id, num, value)
+    end
+  }
+end
+
+local function number_param(id, name, action)
+  return {
+    type = "number",
+    id = id,
+    name = name,
+    min = 0,
+    max = 127,
+    action = action
+  }
+end
+
+function Continuum:_build_barrel_param(barrel_num, action)
+  local param_id = ID_PREFIX .. "barrel" .. barrel_num
+  local name = BARREL_NAMES[barrel_num]
+  return repeated_number_param(barrel_num, param_id, name, action)
+end
+
+function Continuum:_build_gen_param(gen_num, action)
+  local param_id = ID_PREFIX .. "gen" .. gen_num
+  local name = "gen" .. gen_num
+  return repeated_number_param(gen_num, param_id, name, action)
+end
+
+function Continuum:_build_gain_param(action)
+  local param_id = ID_PREFIX .. "gain"
+  local name = "gain"
+  return number_param(param_id, name, action)
+end
+
+function Continuum:_build_rec_ctl_param(r_num, action)
+  local param_id = ID_PREFIX .. "rec" .. r_num
+  local name = "r" .. r_num
+  return repeated_number_param(r_num, param_id, name, action)
+end
+
+function Continuum:_build_rec_mix_param(action)
+  local param_id = ID_PREFIX .. "rec_mix"
+  local name = "r mix"
+  return number_param(param_id, name, action)
+end
+
+
+function Continuum:add_params()
+  -- gain
+  params:add(self:_build_gain_param(function (v)
+    self:gain(v)
+  end))
+
+  -- barrel
+  for i = 1, 4 do
+    params:add(self:_build_barrel_param(i, function (i, n, v)
+      self:barrel(n, v)
+    end))
+  end
+
+  -- gen
+  for i = 1, 2 do
+    params:add(self:_build_gen_param(i, function (i, n, v)
+      self:gen(n, v)
+    end))
+  end
+
+  -- recirculator control
+  for i = 1, 4 do
+    params:add(self:_build_rec_ctl_param(i, function (i, n, v)
+      self:r(n, v)
+    end))
+  end
+
+  -- recirculator mix
+  params:add(self:_build_rec_mix_param(function (v)
+    self:recirculator_mix(v)
+  end))
 end
 
 return Continuum
