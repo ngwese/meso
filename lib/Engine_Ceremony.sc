@@ -1,10 +1,15 @@
+//
+// Engine_Ceremony
+//
+// Based on the Tibetan prayer bells by wondersluyter.
+// See: http://sccode.org/1-4VL
+//
 // TODO:
 // - arrange a static set of synth voices at initialization
 // - allow each voice to be placed in the stereo field
 // - confirm/change such that re-triggering a voice excites the same resonators
+//
 
-
-// Inherit methods from CroneEngine
 Engine_Ceremony : CroneEngine {
   var <group;
   var <voices;
@@ -17,8 +22,6 @@ Engine_Ceremony : CroneEngine {
     group = Group.tail(context.xg);
     voices = Dictionary.new;
 
-    // Heavily based on Tibetan prayer bells by wondersluyter
-    // See: http://sccode.org/1-4VL
     SynthDef(\prayer_bell, {
       arg outbus, t_trig = 1, singSwitch = 0, freq = 2434, amp = 0.5, decayScale = 1, lag = 10, i_doneAction = 0;
 
