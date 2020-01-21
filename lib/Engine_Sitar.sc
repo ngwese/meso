@@ -64,7 +64,7 @@ Engine_Sitar : CroneEngine {
 			Out.ar(out, snd * amp);
 		}).add;
 
-		SynthDef(\pluckImpulse, {
+		SynthDef(\pluck_impulse, {
 			arg out = 0, t_trig = 0, amp = 0.3;
 			Out.ar(out, PinkNoise.ar * EnvGen.kr(Env.perc(0.01, 0.02), t_trig) * amp);
 		}).add;
@@ -159,7 +159,7 @@ Engine_Sitar : CroneEngine {
 
     // impulse generators
     impulse = numChikari.collect { arg i;
-      Synth(\pluckImpulse, [
+      Synth(\pluck_impulse, [
         \out, pluckBus.index + i,
         \num, i,
       ], pluckGroup);
