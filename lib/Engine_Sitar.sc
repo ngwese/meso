@@ -119,7 +119,7 @@ Engine_Sitar : CroneEngine {
 
     // voice control
 		this.addCommand(\pluck, "if", { arg msg;
-      Post << "pluck, msg: " << msg << "\n";
+      // Post << "pluck, msg: " << msg << "\n";
       this.pluck(chikariNum: msg[1], amp: msg[2]);
 		});
 
@@ -151,8 +151,8 @@ Engine_Sitar : CroneEngine {
     var numChikari = chikariFreqs.size;
     var numTarafdar = tarafdarFreqs.size;
 
-    Post << "chikariFreqs: " << chikariFreqs << "\n";
-    Post << "tarafdarFreqs: " << chikariFreqs << "\n";
+    //Post << "chikariFreqs: " << chikariFreqs << "\n";
+    //Post << "tarafdarFreqs: " << chikariFreqs << "\n";
 
     // alloc bus per string for impulse(s)
     pluckBus = Bus.audio(context.server, numChikari);
