@@ -116,12 +116,14 @@ end
 -- @param event : event object (as created by the mk_* functions)
 local function to_string(event)
   local tn = type_names[event.type]
+  local e
   if tn == nil then
     -- unknown/custom event type
-    return "custom"
+    e = "custom " .. event.type
+  else
+    e = "event " .. tn
   end
 
-  local e = "event " .. tn
   for k,v in pairs(event) do
     if k ~= "type" then
       e = e .. ', ' .. k .. ' ' .. v
