@@ -21,7 +21,7 @@ local types = {
   START = 'start',
   STOP = 'stop',
   CONTINUE = 'continue',
-  
+
   -- extended types
 }
 
@@ -204,7 +204,7 @@ function Input:on_midi_event(data)
     -- nothing to do
     return
   end
-  
+
   local event = midi.to_msg(data)
   if event ~= nil then
     self.chain:process(event)
@@ -275,7 +275,7 @@ function Clock.new(o)
   end
 
   o.ch = o.ch or 0
-  
+
   if o.metro == nil then
     o.metro = metro.init()
   end
@@ -545,7 +545,7 @@ function Held:process(event, output)
     -- pass unprocessed events
     output(event)
   end
-  
+
   if changed then
     local held = {}
     for i, k in self._ordering:ipairs() do
@@ -574,7 +574,7 @@ end
 local Pattern = {}
 Pattern.__index = Pattern
 Pattern.EVENT = Pattern
-Pattern.builder = {} 
+Pattern.builder = {}
 
 function Pattern.new(o)
   local o = setmetatable(o or {}, Pattern)
@@ -672,7 +672,7 @@ function Arp:process(event, output, state)
     self:set_pattern(event.value)
     return
   end
-  
+
   if is_clock(event) then
     local last = self._last
     if last ~= nil then
@@ -814,7 +814,7 @@ function Filter.new(o)
   o.types = o.types or {}
   -- FIXME: __newindex isn't updating table, BROKEN move stuff to props
   o:_build_type_table(o.types)
-  
+
   if type(o.invert) ~= 'boolean' then
     o.invert = false
   end
