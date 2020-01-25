@@ -169,8 +169,22 @@ Input.__index = Input
 function Input.new(o)
   local o = setmetatable(o or {}, Input)
 
+  -- determine which device to use
+  if not o.device then
+    if o.name then
+      -- attempt to find the midi device by name
+      for i,v in ipairs(midi.vports) do
+        if o.name == v.name then
+          o.device = midi.connect(i)
+        end
+      end
+    else
+      o.device = midi.connect(1)
+    end
+  end
+
   -- set defaults
-  o.device = o.device or midi.connect(1)
+  --o.device = o.device or midi.connect(1)
   if type(o.enabled) ~= "boolean" then
     o.enabled = true
   end
