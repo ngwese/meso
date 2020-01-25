@@ -872,6 +872,7 @@ return {
   ClockDiv = ClockDiv.new,
   Held = Held.new,
   Filter = Filter.new,
+  Func = Func.new,
   Arp = Arp.new,
   Pattern = Pattern.new,
 
