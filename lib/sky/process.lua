@@ -132,6 +132,13 @@ local function to_string(event)
   return e
 end
 
+-- return true if str starts with start (string)
+-- @param str : the string to test
+-- @param start : the string appearing at the beginning
+local function starts_with(str, start)
+  return str:sub(1, #start) == start
+end
+
 -- convert bpm value to equivalent interval in seconds
 -- @param bpm : beats per minute
 -- @param div : [optional] divisions, 1 = whole note, 4 = quarter note, ...
@@ -176,7 +183,7 @@ function Input.new(o)
     if o.name then
       -- attempt to find the midi device by name
       for i,v in ipairs(midi.vports) do
-        if o.name == v.name then
+        if starts_with(v.name, o.name) then
           o.device = midi.connect(i)
         end
       end
