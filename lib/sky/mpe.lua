@@ -2,10 +2,6 @@ local sky = include('meso/lib/sky/process')
 
 -- for now focus on MIDI Mode 4 ("Mono Mode"), Omni Off, Mono
 
--- notes = {0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0} -- initial velocity (per-channel)
-
-notes = {}
-
 --
 -- MPE Voice abstraction
 --
@@ -27,7 +23,7 @@ function Note.new(proto)
   o.note = 0
   o.ch = 0
   o.vel = 0
-  o.bend = 0
+  o.bend = 0.0
   o.pressure = 0
   o.cc74 = 0
   return o
@@ -60,14 +56,29 @@ function Note:off(event)
   return self
 end
 
-function Note.process(event, output, state)
-  local existing = notes[event.ch]
+local Process = {}
+Process.__index = Process
+
+function Process.new(proto)
+  local o = setmetatable(proto or {}, Process)
+  -- defaults
+  o.notes = {}
+  o.bypass = false
+  return o
+end
+
+function Process:process(event, output, state)
+  if self.bypass then
+    output(event)
+  end
+
+  local existing = self.notes[event.ch]
   if event.type == sky.types.NOTE_ON then
     if existing ~= nil then
       output(existing:off())
     end
     local new = Note.new():on(event) -- just enrich the parsed event
-    notes[new.ch] = new
+    self.notes[new.ch] = new
     output(new)
   elseif event.type == sky.types.NOTE_OFF then
     if existing ~= nil then
@@ -89,10 +100,14 @@ function Note.process(event, output, state)
   elseif event.type == sky.types.PITCH_BEND then
     if existing ~= nil then
       existing.state = states.TRACK
-      existing.bend = event.val
+      existing.bend = sky.to_bend_range(event.val)
+      existing.note = util.clamp(0, 127, existing.note + (10 * existing.bend))
       output(existing)
     end
   end
 end
 
-return Note
+return {
+  Note = Note.new,
+  Process = Process.new ,
+}
