@@ -1,4 +1,4 @@
-local sky = include('meso/lib/sky/process')
+local Event = include('meso/lib/sky/event')
 
 -- for now focus on MIDI Mode 4 ("Mono Mode"), Omni Off, Mono
 
@@ -30,7 +30,7 @@ function Note.new(proto)
 end
 
 function Note:on(event)
-  --self.type = sky.types.NOTE_ON
+  --self.type = Event.types.NOTE_ON
   --tab.print(event)
   self.state = states.START
   if event ~= nil then
@@ -46,7 +46,7 @@ function Note:on(event)
 end
 
 function Note:off(event)
-  --self.type = sky.types.NOTE_OFF
+  --self.type = Event.types.NOTE_OFF
   self.state = states.STOP
   if event ~= nil then
     self.vel = event.vel
@@ -73,34 +73,34 @@ function Process:process(event, output, state)
   end
 
   local existing = self.notes[event.ch]
-  if event.type == sky.types.NOTE_ON then
+  if event.type == Event.types.NOTE_ON then
     if existing ~= nil then
       output(existing:off())
     end
     local new = Note.new():on(event) -- just enrich the parsed event
     self.notes[new.ch] = new
     output(new)
-  elseif event.type == sky.types.NOTE_OFF then
+  elseif event.type == Event.types.NOTE_OFF then
     if existing ~= nil then
       existing:off(event)
     end
     output(existing)
-  elseif event.type == sky.types.CHANNEL_PRESSURE then
+  elseif event.type == Event.types.CHANNEL_PRESSURE then
     if existing ~= nil then
       existing.state = states.TRACK
       existing.pressure = event.val
       output(existing)
     end
-  elseif event.type == sky.types.CONTROL_CHANGE then
+  elseif event.type == Event.types.CONTROL_CHANGE then
     if event.cc == 74 and existing ~= nil then
       existing.state = states.TRACK
       existing.cc74 = event.val
       output(existing)
     end
-  elseif event.type == sky.types.PITCH_BEND then
+  elseif event.type == Event.types.PITCH_BEND then
     if existing ~= nil then
       existing.state = states.TRACK
-      existing.bend = sky.to_bend_range(event.val)
+      existing.bend = Event.to_bend_range(event.val)
       existing.note = util.clamp(0, 127, existing.note + (10 * existing.bend))
       output(existing)
     end
@@ -109,5 +109,5 @@ end
 
 return {
   Note = Note.new,
-  Process = Process.new ,
+  Process = Process.new,
 }
