@@ -198,6 +198,11 @@ function Input.new(o)
     o.enabled = true
   end
 
+  if o.device == nil then
+    print("warning: input not connected to device " .. o.name )
+    return o
+  end
+
   -- install device event handler
   o.device.event = function(data)
     o:on_midi_event(data)
