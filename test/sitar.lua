@@ -1,8 +1,8 @@
 local mu = require('musicutil')
 local hs = require('awake/lib/halfsecond')
 local SitarEngine = require('meso/lib/sitar_engine')
-local sky = include('meso/lib/sky/process')
-local mpe = include('meso/lib/sky/mpe')
+local sky = include('sky/lib/prelude')
+local mpe = include('sky/lib/device/mpe')
 
 engine.name = 'Sitar'
 
@@ -29,7 +29,7 @@ chain = sky.Chain{
   -- output events as midi
   --mpe.Process{},
   sky.Logger{},
-  --sky.Func(render)
+  sky.Func(render)
 }
 
 local source = sky.Input{
