@@ -33,14 +33,14 @@ Shruti {
       snd = Pulse.ar(hz, pwm, mul: 0.2);
       // add a little "grit" to the reed
       snd = Disintegrator.ar(snd, 0.5, 0.7);
-      snd = snd + SinOsc.ar(hz + (jitter * 0.6), mul: 0.3);
+      snd = snd + SinOsc.ar(hz + (jitter * 0.6), pwm, mul: 0.25);
       // a little ebb and flow in volume
       snd = snd * LFNoise2.kr(5, 0.05, 1);
       // use the same signal to control both the resonant freq and the amplitude
       blow = EnvGen.ar(Env.asr(attack, 1.0, release), gate, doneAction: 2);
       snd = snd + BPF.ar(snd, blow.linexp(0, 1, 2000, 2442), 0.3, 3);
       // boost the high end a bit to get a buzzier sound
-      snd = BHiShelf.ar(snd, 1200, 1, 3);
+      snd = BHiShelf.ar(snd, 1200, 1, 3 * bellowsAmp);
       snd = snd * blow * bellowsAmp;
       Out.ar(out, Pan2.ar(snd, 0, amp));
     }).add;
