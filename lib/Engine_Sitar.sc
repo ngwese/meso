@@ -38,9 +38,9 @@ Engine_Sitar : CroneEngine {
 		// Single string of a sitar.
 		SynthDef(\tar, {
 			arg out = 0, in = 0, inscale = 1.0, freq = 440, bw = 1.03, amp = 0.5,
-			      pos = 0.1,
-			      hc1 = 1, hc3 = 30, hfreq = 3000,
-			      vc1 = 1, vc3 = 30, vfreq = 3000;
+          pos = 0.1,
+          hc1 = 1, hc3 = 30, hfreq = 3000,
+          vc1 = 1, vc3 = 30, vfreq = 3000;
 
 			var inp, jawari, snd;
 			// Input audio -- may be a pluck impulse (chikari) or audio (tarafdar)
@@ -123,6 +123,11 @@ Engine_Sitar : CroneEngine {
       this.pluck(chikariNum: msg[1], amp: msg[2]);
 		});
 
+    this.addCommand(\body, "fff", { arg msg;
+      // adjust the chikari / tarafdar mix
+      sitar.set(\amp, msg[1], \dry, msg[2], \wet, msg[3]);
+    });
+
 	}
 
   beginTuning {
@@ -197,7 +202,8 @@ Engine_Sitar : CroneEngine {
     isTuned = true;
   }
 
-  pluck { arg chikariNum, amp = 0.3;
+  pluck { arg chikariNum, amp = 0.3, bw = 1.08;
+    chikari[chikariNum].set(\bw, bw);
     impulse[chikariNum].set(\t_trig, 1, \amp, amp);
   }
 
