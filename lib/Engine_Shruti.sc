@@ -49,6 +49,7 @@ Shruti {
       arg bus, amp = 0, time = 5, curve = 0, warp = 5;
       var snd = VarLag.kr(amp, time, curve, warp);
       snd = snd * LFNoise2.kr(0.4, 0.2, 1);
+      snd = snd * (SinOsc.ar(0.3, mul: 0.2, add: 0.2) + 0.8);
       Out.kr(bus, snd);
     }).add;
   }
