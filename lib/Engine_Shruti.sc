@@ -22,15 +22,18 @@ Shruti {
   *define {
     SynthDef(\reed, {
       arg out = 0, freq = 440, amp = 0.1, gate = 1, attack = 0.3, release = 0.3, bellowsBus = -1;
-      var snd, blow, pwm, bellowsAmp;
+      var snd, blow, pwm, bellowsAmp, hz, jitter;
 
       bellowsAmp = if(bellowsBus < 0, DC.kr(1), In.kr(bellowsBus));
 
       // pulse with modulating width
-      pwm = 0.48 + LFNoise1.kr([Rand(0.04,0.07), Rand(0.04,0.08)], 0.1);
-      snd = Pulse.ar((Rand(-0.03, 0.05) + freq.cpsmidi).midicps, pwm, 0.2);
+      jitter = LFNoise1.kr([Rand(0.04,0.07), Rand(0.04,0.08)], 0.1);
+      pwm = 0.48 + jitter;
+      hz = (Rand(-0.03, 0.05) + freq.cpsmidi).midicps;
+      snd = Pulse.ar(hz, pwm, mul: 0.2);
       // add a little "grit" to the reed
       snd = Disintegrator.ar(snd, 0.5, 0.7);
+      snd = snd + SinOsc.ar(hz + (jitter * 0.6), mul: 0.3);
       // a little ebb and flow in volume
       snd = snd * LFNoise2.kr(5, 0.05, 1);
       // use the same signal to control both the resonant freq and the amplitude
