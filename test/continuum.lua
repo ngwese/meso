@@ -29,7 +29,7 @@ end
 
 
 function init_continuum(vport)
-  local cm = continuum.connect(1)
+  local cm = continuum.connect(vport)
   cm.device.event = function(data)
     local e = midi.to_msg(data)
     if e.ch == cm.CFG_CH then
@@ -61,12 +61,12 @@ end
 --
 
 function init()
-  cm = init_continuum(1)
+  cm = init_continuum(2)
   cm:add_params()
   c = init_metro()
-  --c:start()
+  c:start()
 end
 
 function cleanup()
-  --c:stop()
+  c:stop()
 end

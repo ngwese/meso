@@ -21,7 +21,7 @@ function Continuum.connect(num)
   return o
 end
 
--- channel constants 
+-- channel constants
 Continuum.ABS_CH = 1
 Continuum.REL_CH = 2
 Continuum.CFG_CH = 16
@@ -35,8 +35,10 @@ function Continuum:octave_shift(direction)
   self.device:cc(8, shift, self.ABS_CH)
 end
 
-function Continuum:mono_switch(value)
-  -- TODO
+function Continuum:mono_switch(enable)
+  local value = 0
+  if enabled then value = 127 end
+  self.device:cc(9, value, self.ABS_CH)
 end
 
 function Continuum:fine_tune(cents)
@@ -63,6 +65,17 @@ end
 function Continuum:gain(value)
   self.device:cc(18, clamp(value), self.ABS_CH)
 end
+
+function Continuum:post_gain(value)
+  -- firmware 9.53 adds pre/post gain
+  self:gain(value)
+end
+
+function Continuum:pre_gain(value)
+  -- firmware 9.53 adds pre/post gain
+  self.device:cc(26, clamp(value), self.ABS_CH)
+end
+
 
 function Continuum:input_level(value)
   self.device:cc(19, clamp(value), self.ABS_CH)
@@ -130,6 +143,22 @@ function Continuum:sostenuto(which, value)
   end
 end
 
+function Continuum:eq_tilt(value)
+    -- no value for flat eq
+    self.device:cc(83, clamp(value or 64), self.ABS_CH)
+end
+
+-- 0 (120hz) to 127 (15khz)
+function Continuum:eq_frequency(value)
+  self.device:cc(84, clamp(value), self.ABS_CH)
+end
+
+function Continuum:eq_mix(value)
+  -- no value for 50% wet/dry
+  self.device:cc(83, clamp(value or 64), self.ABS_CH)
+end
+
+
 --
 -- configuration controller assignments (section 15)
 --
@@ -138,18 +167,13 @@ end
 -- 15.1 load, store, and list presets
 --
 
-function Continuum:load_preset(num) -- broken
-  num = util.clamp(num, 1, 511)
-  lsb = 0x7f & num
-  msb = 0x7f & (num >> 7)
-  print("lsb", lsb, "msb", msb)
-  self.device:cc(81, lsb, self.CFG_CH)
-  self.device:cc(82, msb, self.CFG_CH)
+function Continuum:user_preset(num)
+  self:load_preset(0, num)
 end
 
-function Continuum:load_preset2(category, preset)
+function Continuum:load_preset(category, preset)
   local c = util.clamp(category, 0, 127)
-  local p = util.clamp(preset, 1, 127)
+  local p = util.clamp(preset - 1, 0, 127)
   self.device:cc(0, c, self.CFG_CH)
   self.device:cc(32, p, self.CFG_CH)
 end
@@ -205,7 +229,7 @@ function Continuum:surface_routing(options)
   local n = 0
   for i,option in ipairs(options) do
     if option == "out" then
-      n = n | 1 
+      n = n | 1
     elseif option == "internal" then
       n = n | 1 << 1
     elseif option == "cvc" then
@@ -230,7 +254,7 @@ function Continuum:midi_input_routing(options)
 end
 
 function Continuum:split_point(note)
-  self.device:cc(45, clamp(note), self.CFG_CH)
+  self.device:cc(45, clamp(note or 60), self.CFG_CH)
 end
 
 function Continuum:split_mode(options)
@@ -247,7 +271,7 @@ function Continuum:jack_cc(which, cc_num)
   elseif which == 2 then
     self.device:cc(53, clamp(cc_num), self.CFG_CH)
   end
-end 
+end
 
 function Continuum:jack_range(which, min, max)
   if which == 1 then
@@ -257,7 +281,7 @@ function Continuum:jack_range(which, min, max)
     self.device:cc(78, clamp(min), self.CFG_CH)
     self.device:cc(79, clamp(max), self.CFG_CH)
   end
-end 
+end
 
 --
 -- 15.7 mono function
